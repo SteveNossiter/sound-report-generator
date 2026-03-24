@@ -227,19 +227,84 @@
             tr { page-break-inside: avoid; page-break-after: auto; }
         }
         
-        .grid-2 {
+        .grid-3 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .channel-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .channel-row input {
+            flex-grow: 1;
+        }
+
+        .remove-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover { background: #fecaca; }
+
+        .add-btn {
+            background: #f1f5f9;
+            color: var(--primary);
+            border: 1px dashed var(--primary);
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 5px;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover { background: #e2e8f0; }
+
+        .share-menu {
+            position: absolute;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 10px;
+            bottom: 80px;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
         }
         
-        .hint {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            display: block;
-            margin-bottom: 8px;
+        .share-menu.active { display: flex; }
+
+        .share-option {
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
         }
+        
+        .share-option:hover { background: var(--background); }
     </style>
 </head>
 <body>
@@ -251,33 +316,65 @@
         <div class="grid-2">
             <div class="form-group">
                 <label>Production Name</label>
-                <input type="text" id="production" placeholder="e.g. Operation Ochre" value="Operation Ochre">
+                <input type="text" id="production" placeholder="e.g. Project Title">
             </div>
             <div class="form-group">
                 <label>Subject / Focus (Optional)</label>
-                <input type="text" id="subject" placeholder="e.g. IV - Stuart Tipple" value="IV - Stuart Tipple">
-            </div>
-        </div>
-
-        <div class="grid-2">
-            <div class="form-group">
-                <label>Dates</label>
-                <input type="text" id="dates" placeholder="e.g. 23/03/2026 - 24/03/2026" value="23/03/2026 - 24/03/2026">
-            </div>
-            <div class="form-group">
-                <label>Tech Specs</label>
-                <input type="text" id="specs" placeholder="e.g. 24Bit, 48kHz, 24fps" value="24Bit, 48kHz, 24fps">
+                <input type="text" id="subject" placeholder="e.g. Talent Name / Scene">
             </div>
         </div>
 
         <div class="form-group">
-            <label>Channel Setup</label>
-            <input type="text" id="channels" placeholder="e.g. CH1: Boom, CH2: Lav" value="CH1: Boom, CH2: Lav">
+            <label>Dates</label>
+            <input type="text" id="dates" placeholder="e.g. 23/03/2026">
+        </div>
+
+        <div class="grid-3">
+            <div class="form-group">
+                <label>Bitrate</label>
+                <select id="bitrate">
+                    <option value="24Bit">24 Bit</option>
+                    <option value="32Bit Float">32 Bit Float</option>
+                    <option value="16Bit">16 Bit</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Sample Rate</label>
+                <select id="samplerate">
+                    <option value="48kHz">48 kHz</option>
+                    <option value="96kHz">96 kHz</option>
+                    <option value="44.1kHz">44.1 kHz</option>
+                    <option value="192kHz">192 kHz</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>FPS</label>
+                <select id="fps">
+                    <option value="24fps">24 fps</option>
+                    <option value="23.976fps">23.976 fps</option>
+                    <option value="25ps">25 fps</option>
+                    <option value="29.97fps">29.97 fps</option>
+                    <option value="30fps">30 fps</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Channels</label>
+            <div id="channelsList">
+                <div class="channel-row">
+                    <input type="text" placeholder="Ch 1: e.g. Boom" class="channel-input">
+                </div>
+                <div class="channel-row">
+                    <input type="text" placeholder="Ch 2: e.g. Lav" class="channel-input">
+                </div>
+            </div>
+            <button type="button" class="add-btn" onclick="addChannel()">+ Add Channel</button>
         </div>
 
         <div class="form-group">
             <label>Raw Notes</label>
-            <label class="hint">Paste your notes. Start days with "Day 1", takes with "T1", and notes with a "*". Timestamps (like "14min -" or "1:50 -") will auto-format.</label>
+            <label class="hint">Paste your notes. Start days with "Day 1", takes with "T1", and notes with a "*". Timestamps (like "23min -") flag automatically.</label>
             <textarea id="rawNotes" placeholder="Day 1
 T1
 * Early roll
@@ -297,10 +394,27 @@ T2 - Sound Only
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Edit
         </button>
-        <button class="action-btn" onclick="window.print()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            Export to PDF
-        </button>
+        
+        <div style="position: relative;">
+            <button class="action-btn" onclick="toggleShareMenu()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                Share Report
+            </button>
+            <div class="share-menu" id="shareMenu">
+                <div class="share-option" onclick="shareViaNative()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    System Share (PDF/AirDrop)
+                </div>
+                <div class="share-option" onclick="shareViaEmail()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    Send via Email
+                </div>
+                <div class="share-option" onclick="window.print()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Save / Print PDF
+                </div>
+            </div>
+        </div>
     </div>
 
     <header class="report-header">
@@ -349,16 +463,59 @@ T2 - Sound Only
 </div>
 
 <script>
-    // Keyword highlighting logic
+    // Configuration & Management
     const noiseWords = ['rain', 'plane', 'siren', 'squeak', 'squeaking', 'chair', 'rustling', 'off boom', 'lav', 'paper rustling', 'interference'];
     const atmosWords = ['atmos', 'quiet moment', 'touching moment', 'clean', 'good levels'];
 
+    function addChannel() {
+        const list = document.getElementById('channelsList');
+        const count = list.children.length + 1;
+        const row = document.createElement('div');
+        row.className = 'channel-row';
+        row.innerHTML = `
+            <input type="text" placeholder="Ch ${count}: e.g. Talent Name" class="channel-input">
+            <button class="remove-btn" onclick="this.parentElement.remove()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        `;
+        list.appendChild(row);
+    }
+
+    function toggleShareMenu() {
+        document.getElementById('shareMenu').classList.toggle('active');
+    }
+
+    // Close share menu when clicking outside
+    window.onclick = function(event) {
+        if (!event.target.closest('.action-btn') && !event.target.closest('.share-menu')) {
+            document.getElementById('shareMenu').classList.remove('active');
+        }
+    }
+
+    function shareViaNative() {
+        if (navigator.share) {
+            navigator.share({
+                title: `Sound Report - ${document.getElementById('production').value}`,
+                text: `Please find the sound report for ${document.getElementById('production').value} attached.`,
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            window.print();
+        }
+    }
+
+    function shareViaEmail() {
+        const prod = document.getElementById('production').value || 'Production';
+        const subject = encodeURIComponent(`Sound Report: ${prod}`);
+        const body = encodeURIComponent(`Hello,\n\nPlease find the internal sound report summary for ${prod} below.\n\n(Note: For the full formatted PDF, please request the official export.)`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+
+    // Extraction & Rendering Logic
     function processNote(line) {
         let text = line.startsWith('*') ? line.substring(1).trim() : line;
-        
         let html = text;
         
-        // 1. Extract Time (e.g., 23min, 1:50, Early roll)
         let timeMatch = html.match(/^((?:\d{1,2}:\d{2}(?:\s*-\s*\d{1,2}:\d{2})?|\d{1,3}min|\d{1,2}:\d{2}(?:\.\d{1,2})?|Early roll(?:ing)?))/i);
         let timeHtml = "";
         
@@ -370,12 +527,8 @@ T2 - Sound Only
                  timeHtml = `<span class="timestamp">${t.replace(/\s*-\s*$/, '').trim()}</span> `;
             }
             html = html.substring(timeMatch[0].length).replace(/^(\s*-\s*|\s*:\s*|\s+)/, "");
-        } else if (html.toLowerCase().includes("early roll")) {
-             // If early roll is written but not at the very start
-             html = html.replace(/early roll(?:ing)?/i, '<span class="noise-highlight">$&</span>');
         }
 
-        // 2. Highlight Keywords
         noiseWords.forEach(w => {
             let regex = new RegExp(`\\b(${w})\\b`, 'gi');
             html = html.replace(regex, `<span class="noise-highlight">$1</span>`);
@@ -406,14 +559,26 @@ T2 - Sound Only
     }
 
     function generateReport() {
-        // 1. Map Meta Data
+        // Collect Specs
+        const bitrate = document.getElementById('bitrate').value;
+        const samplerate = document.getElementById('samplerate').value;
+        const fps = document.getElementById('fps').value;
+        document.getElementById('outSpecs').innerText = `${bitrate} | ${samplerate} | ${fps}`;
+
+        // Collect Channels
+        const chanInputs = document.querySelectorAll('.channel-input');
+        let chanArr = [];
+        chanInputs.forEach((inp, idx) => {
+            if (inp.value) chanArr.push(`CH${idx+1}: ${inp.value}`);
+        });
+        document.getElementById('outChannels').innerText = chanArr.join(' | ') || 'N/A';
+
+        // Map Meta Data
         document.getElementById('outProduction').innerText = document.getElementById('production').value || 'Production Report';
         document.getElementById('outSubject').innerText = document.getElementById('subject').value || 'N/A';
         document.getElementById('outDates').innerText = document.getElementById('dates').value || 'N/A';
-        document.getElementById('outSpecs').innerText = document.getElementById('specs').value || 'N/A';
-        document.getElementById('outChannels').innerText = document.getElementById('channels').value || 'N/A';
 
-        // 2. Parse Notes
+        // Parse Notes
         const raw = document.getElementById('rawNotes').value;
         const lines = raw.split('\n');
         
@@ -421,16 +586,10 @@ T2 - Sound Only
         let curDay = null;
         let curTake = null;
         
-        // Simple heuristic: 
-        // A day starts if line begins with "Day " or is a date.
-        // A take starts if line begins with "T" and a number.
-        // Otherwise it's a note.
-        
         lines.forEach(line => {
             line = line.trim();
             if (!line) return;
             
-            // Check Day Match
             let dayMatch = line.match(/^(?:Day\s*\d*(?:\s*-\s*(.*))?|\d+[\/\-]\d+[\/\-]\d+)$/i);
             if (dayMatch) {
                 curDay = { title: line, takes: [] };
@@ -439,7 +598,6 @@ T2 - Sound Only
                 return;
             }
             
-            // Check Take Match
             let takeMatch = line.match(/^t\d+(.*)$/i);
             if (takeMatch) {
                 if (!curDay) {
@@ -451,11 +609,9 @@ T2 - Sound Only
                 return;
             }
             
-            // Otherwise Note
             if (curTake) {
                 curTake.notes.push(line);
             } else if (line.startsWith('*')) {
-                // Orphaned note? Just start a take "General Notes"
                 if (!curDay) {
                     curDay = { title: "Day 1", takes: [] };
                     days.push(curDay);
@@ -466,39 +622,18 @@ T2 - Sound Only
             }
         });
         
-        // 3. Render HTML
         let htmlOut = '';
-        
         days.forEach(day => {
-            htmlOut += `
-            <section class="day-section">
-                <h2 class="day-title">${day.title}</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="take-col">Take</th>
-                            <th class="notes-col">Production Notes & Quality Highlights</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
+            htmlOut += `<section class="day-section"><h2 class="day-title">${day.title}</h2><table><thead><tr><th class="take-col">Take</th><th class="notes-col">Production Notes & Quality Highlights</th></tr></thead><tbody>`;
             day.takes.forEach(take => {
-                htmlOut += `<tr>
-                    <td class="take-col">${processTakeName(take.name)}</td>
-                    <td class="notes-col">`;
-                
+                htmlOut += `<tr><td class="take-col">${processTakeName(take.name)}</td><td class="notes-col">`;
                 if (take.notes.length === 0) {
                      htmlOut += `<div class="note-item"><span class="atmos-highlight">Clean take. Good levels.</span></div>`;
                 } else {
-                     take.notes.forEach(note => {
-                         htmlOut += processNote(note);
-                     });
+                     take.notes.forEach(note => { htmlOut += processNote(note); });
                 }
-                
                 htmlOut += `</td></tr>`;
             });
-            
             htmlOut += `</tbody></table></section>`;
         });
         
@@ -507,8 +642,6 @@ T2 - Sound Only
         }
         
         document.getElementById('daysContainer').innerHTML = htmlOut;
-        
-        // Toggle Views
         document.getElementById('setupView').classList.add('hidden');
         document.getElementById('reportView').classList.add('active');
         window.scrollTo(0,0);
