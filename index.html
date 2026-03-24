@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Report Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #512DA8;
+            --primary-light: #7E57C2;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --highlight-bg: #fff1f2;
+            --highlight-text: #be123c;
+            --success-bg: #f0fdf4;
+            --success-text: #15803d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(81, 45, 168, 0.1);
+        }
+
+        textarea {
+            height: clamp(200px, 40vh, 500px);
+            resize: vertical;
+            line-height: 1.5;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(81, 45, 168, 0.3);
+            background: var(--primary-light);
+        }
+
+        /* Generated Report Styles */
+        .report-view {
+            display: none;
+            background: #fff;
+            padding: 50px;
+            max-width: 1000px;
+            margin: 0 auto;
+            border-radius: 24px;
+        }
+
+        .report-view.active {
+            display: block;
+        }
+        
+        .setup-view.hidden {
+            display: none;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 50px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 30px;
+        }
+
+        .logo-section img {
+            max-width: 250px;
+            height: auto;
+        }
+
+        .contact-info {
+            text-align: right;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .project-title h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            background: var(--background);
+            padding: 25px;
+            border-radius: 16px;
+        }
+
+        .meta-item { display: flex; flex-direction: column; }
+        .meta-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; }
+        .meta-value { font-weight: 600; font-size: 1.1rem; }
+
+        .day-section { margin-bottom: 60px; }
+        .day-title { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); color: var(--primary); display: inline-flex; align-items: center; }
+        .day-title::before { content: ''; width: 12px; height: 12px; background: var(--primary); border-radius: 3px; margin-right: 12px; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; }
+        th { text-align: left; padding: 12px 15px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
+        td { padding: 15px; vertical-align: top; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .take-col { width: 150px; font-weight: 700; color: var(--primary); }
+        
+        .note-item { margin-bottom: 8px; display: flex; gap: 10px; align-items: flex-start; }
+        .timestamp { font-family: monospace; font-weight: 600; color: var(--primary); background: rgba(81, 45, 168, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; }
+        .noise-highlight { background-color: var(--highlight-bg); color: var(--highlight-text); padding: 2px 8px; border-radius: 6px; font-weight: 500; border: 1px solid rgba(190, 18, 60, 0.1); }
+        .atmos-highlight { background-color: var(--success-bg); color: var(--success-text); padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+        
+        .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: var(--border); margin-left: 8px; font-weight: 600; display: inline-block; margin-top: 4px; }
+        .sound-only { background: #fdf2f8; color: #9d174d; border: 1px solid #f9a8d4; }
+        .over-shoulder { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+
+        /* Floating action bar for generated view */
+        .action-bar {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .action-btn.secondary { background: var(--surface); color: var(--text-main); }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .action-bar, .setup-view { display: none !important; }
+            .report-view { padding: 0; max-width: 100%; border: none; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container setup-view" id="setupView">
+    <div class="card">
+        <h1>Sound Report Generator</h1>
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Production Name</label>
+                <input type="text" id="production" placeholder="e.g. Operation Ochre" value="Operation Ochre">
+            </div>
+            <div class="form-group">
+                <label>Subject / Focus (Optional)</label>
+                <input type="text" id="subject" placeholder="e.g. IV - Stuart Tipple" value="IV - Stuart Tipple">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Dates</label>
+                <input type="text" id="dates" placeholder="e.g. 23/03/2026 - 24/03/2026" value="23/03/2026 - 24/03/2026">
+            </div>
+            <div class="form-group">
+                <label>Tech Specs</label>
+                <input type="text" id="specs" placeholder="e.g. 24Bit, 48kHz, 24fps" value="24Bit, 48kHz, 24fps">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Channel Setup</label>
+            <input type="text" id="channels" placeholder="e.g. CH1: Boom, CH2: Lav" value="CH1: Boom, CH2: Lav">
+        </div>
+
+        <div class="form-group">
+            <label>Raw Notes</label>
+            <label class="hint">Paste your notes. Start days with "Day 1", takes with "T1", and notes with a "*". Timestamps (like "14min -" or "1:50 -") will auto-format.</label>
+            <textarea id="rawNotes" placeholder="Day 1
+T1
+* Early roll
+* 23min - plane noise
+
+T2 - Sound Only
+* 5min - atmos is good"></textarea>
+        </div>
+
+        <button class="btn" onclick="generateReport()">Generate & Preview Report</button>
+    </div>
+</div>
+
+<div class="report-view" id="reportView">
+    <div class="action-bar">
+        <button class="action-btn secondary" onclick="editReport()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Edit
+        </button>
+        <button class="action-btn" onclick="window.print()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Export to PDF
+        </button>
+    </div>
+
+    <header class="report-header">
+        <div class="logo-section">
+            <img src="logo.jpg" alt="SoundLife Audio" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <h2 style="display:none; color: var(--primary); font-family: 'Outfit'; font-weight:800;">SoundLife Audio</h2>
+        </div>
+        <div class="contact-info">
+            <p><strong>SoundLife Audio</strong></p>
+            <p>soundlifeaudio@gmail.com</p>
+            <p>0437678122</p>
+        </div>
+    </header>
+
+    <div class="project-title">
+        <h1 id="outProduction">Project Title</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;">Professional Sound Report - Post-Production Copy</p>
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-item">
+            <span class="meta-label">Subject</span>
+            <span class="meta-value" id="outSubject">-</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Dates</span>
+            <span class="meta-value" id="outDates">-</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Recording Specs</span>
+            <span class="meta-value" id="outSpecs">-</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Channels</span>
+            <span class="meta-value" id="outChannels">-</span>
+        </div>
+    </div>
+
+    <div id="daysContainer">
+        <!-- Rendered days go here -->
+    </div>
+    
+    <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--text-secondary); font-size: 0.8rem;">
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> SoundLife Audio. This report is confidential and intended for the designated production team.</p>
+    </footer>
+</div>
+
+<script>
+    // Keyword highlighting logic
+    const noiseWords = ['rain', 'plane', 'siren', 'squeak', 'squeaking', 'chair', 'rustling', 'off boom', 'lav', 'paper rustling', 'interference'];
+    const atmosWords = ['atmos', 'quiet moment', 'touching moment', 'clean', 'good levels'];
+
+    function processNote(line) {
+        let text = line.startsWith('*') ? line.substring(1).trim() : line;
+        
+        let html = text;
+        
+        // 1. Extract Time (e.g., 23min, 1:50, Early roll)
+        let timeMatch = html.match(/^((?:\d{1,2}:\d{2}(?:\s*-\s*\d{1,2}:\d{2})?|\d{1,3}min|\d{1,2}:\d{2}(?:\.\d{1,2})?|Early roll(?:ing)?))/i);
+        let timeHtml = "";
+        
+        if (timeMatch && timeMatch[0]) {
+            let t = timeMatch[0];
+            if (t.toLowerCase().includes("early roll")) {
+                 timeHtml = `<span class="noise-highlight">Early Roll</span> `;
+            } else {
+                 timeHtml = `<span class="timestamp">${t.replace(/\s*-\s*$/, '').trim()}</span> `;
+            }
+            html = html.substring(timeMatch[0].length).replace(/^(\s*-\s*|\s*:\s*|\s+)/, "");
+        } else if (html.toLowerCase().includes("early roll")) {
+             // If early roll is written but not at the very start
+             html = html.replace(/early roll(?:ing)?/i, '<span class="noise-highlight">$&</span>');
+        }
+
+        // 2. Highlight Keywords
+        noiseWords.forEach(w => {
+            let regex = new RegExp(`\\b(${w})\\b`, 'gi');
+            html = html.replace(regex, `<span class="noise-highlight">$1</span>`);
+        });
+        
+        atmosWords.forEach(w => {
+             let regex = new RegExp(`\\b(${w})\\b`, 'gi');
+             html = html.replace(regex, `<span class="atmos-highlight">$1</span>`);
+        });
+
+        return `<div class="note-item">${timeHtml}<span>${html}</span></div>`;
+    }
+
+    function processTakeName(name) {
+        let tagHtml = "";
+        let cleanName = name;
+        
+        if (name.toLowerCase().includes('sound only')) {
+            tagHtml += `<div class="tag sound-only">Sound Only</div>`;
+            cleanName = cleanName.replace(/-\s*sound only/i, '').trim();
+        }
+        if (name.toLowerCase().includes('over shoulder')) {
+            tagHtml += `<div class="tag over-shoulder">Over Shoulder</div>`;
+            cleanName = cleanName.replace(/-\s*over shoulder/i, '').trim();
+        }
+        
+        return `${cleanName}<br>${tagHtml}`;
+    }
+
+    function generateReport() {
+        // 1. Map Meta Data
+        document.getElementById('outProduction').innerText = document.getElementById('production').value || 'Production Report';
+        document.getElementById('outSubject').innerText = document.getElementById('subject').value || 'N/A';
+        document.getElementById('outDates').innerText = document.getElementById('dates').value || 'N/A';
+        document.getElementById('outSpecs').innerText = document.getElementById('specs').value || 'N/A';
+        document.getElementById('outChannels').innerText = document.getElementById('channels').value || 'N/A';
+
+        // 2. Parse Notes
+        const raw = document.getElementById('rawNotes').value;
+        const lines = raw.split('\n');
+        
+        let days = [];
+        let curDay = null;
+        let curTake = null;
+        
+        // Simple heuristic: 
+        // A day starts if line begins with "Day " or is a date.
+        // A take starts if line begins with "T" and a number.
+        // Otherwise it's a note.
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+            
+            // Check Day Match
+            let dayMatch = line.match(/^(?:Day\s*\d*(?:\s*-\s*(.*))?|\d+[\/\-]\d+[\/\-]\d+)$/i);
+            if (dayMatch) {
+                curDay = { title: line, takes: [] };
+                days.push(curDay);
+                curTake = null;
+                return;
+            }
+            
+            // Check Take Match
+            let takeMatch = line.match(/^t\d+(.*)$/i);
+            if (takeMatch) {
+                if (!curDay) {
+                    curDay = { title: "Day 1", takes: [] };
+                    days.push(curDay);
+                }
+                curTake = { name: line, notes: [] };
+                curDay.takes.push(curTake);
+                return;
+            }
+            
+            // Otherwise Note
+            if (curTake) {
+                curTake.notes.push(line);
+            } else if (line.startsWith('*')) {
+                // Orphaned note? Just start a take "General Notes"
+                if (!curDay) {
+                    curDay = { title: "Day 1", takes: [] };
+                    days.push(curDay);
+                }
+                curTake = { name: "Notes", notes: [] };
+                curDay.takes.push(curTake);
+                curTake.notes.push(line);
+            }
+        });
+        
+        // 3. Render HTML
+        let htmlOut = '';
+        
+        days.forEach(day => {
+            htmlOut += `
+            <section class="day-section">
+                <h2 class="day-title">${day.title}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="take-col">Take</th>
+                            <th class="notes-col">Production Notes & Quality Highlights</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            day.takes.forEach(take => {
+                htmlOut += `<tr>
+                    <td class="take-col">${processTakeName(take.name)}</td>
+                    <td class="notes-col">`;
+                
+                if (take.notes.length === 0) {
+                     htmlOut += `<div class="note-item"><span class="atmos-highlight">Clean take. Good levels.</span></div>`;
+                } else {
+                     take.notes.forEach(note => {
+                         htmlOut += processNote(note);
+                     });
+                }
+                
+                htmlOut += `</td></tr>`;
+            });
+            
+            htmlOut += `</tbody></table></section>`;
+        });
+        
+        if (days.length === 0) {
+             htmlOut = "<p style='color:var(--text-secondary);'>No valid notes found. Try adding 'Day 1' and 'T1' followed by your notes.</p>";
+        }
+        
+        document.getElementById('daysContainer').innerHTML = htmlOut;
+        
+        // Toggle Views
+        document.getElementById('setupView').classList.add('hidden');
+        document.getElementById('reportView').classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    function editReport() {
+        document.getElementById('reportView').classList.remove('active');
+        document.getElementById('setupView').classList.remove('hidden');
+        window.scrollTo(0,0);
+    }
+</script>
+
+</body>
+</html>
