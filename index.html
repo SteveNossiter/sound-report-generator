@@ -522,50 +522,89 @@ T2 - Sound Only
     }
 
     async function downloadPDF() {
-        const element = document.getElementById('reportView');
-        const opt = {
-            margin:       0.5,
-            filename:     `Sound_Report_${document.getElementById('production').value || 'Export'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
         
-        // Hide action bar during capture
-        document.querySelector('.action-bar').style.display = 'none';
-        await html2pdf().set(opt).from(element).save();
-        document.querySelector('.action-bar').style.display = 'flex';
+        try {
+            if (typeof html2pdf === 'undefined') {
+                alert("PDF library not loaded. Falling back to browser print.");
+                window.print();
+                return;
+            }
+
+            btn.innerHTML = "Generating...";
+            btn.disabled = true;
+
+            const element = document.getElementById('reportView');
+            const opt = {
+                margin:       [0.5, 0.5],
+                filename:     `Sound_Report_${document.getElementById('production').value.replace(/[^a-z0-9]/gi, '_') || 'Export'}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            
+            document.querySelector('.action-bar').style.display = 'none';
+            await html2pdf().set(opt).from(element).save();
+            document.querySelector('.action-bar').style.display = 'flex';
+        } catch (err) {
+            console.error(err);
+            alert("Error generating PDF. Using standard print instead.");
+            window.print();
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 
     async function sharePDF() {
-        const element = document.getElementById('reportView');
-        const opt = {
-            margin:       0.5,
-            filename:     'report.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
 
-        if (!navigator.share) {
-            alert("Your browser doesn't support direct sharing. Use Download instead.");
-            return;
-        }
-
-        document.querySelector('.action-bar').style.display = 'none';
-        const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-        document.querySelector('.action-bar').style.display = 'flex';
-
-        const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
-        
         try {
-            await navigator.share({
-                files: [file],
-                title: 'Sound Report',
-                text: 'Sharing Sound Report PDF'
-            });
+            if (typeof html2pdf === 'undefined') {
+                alert("PDF library not loaded. Cannot share file directly.");
+                return;
+            }
+
+            if (!navigator.share || !navigator.canShare) {
+                alert("Your browser does not support direct file sharing. Please use Download instead.");
+                return;
+            }
+
+            btn.innerHTML = "Preparing File...";
+            btn.disabled = true;
+
+            const element = document.getElementById('reportView');
+            const opt = {
+                margin:       [0.5, 0.5],
+                filename:     `Sound_Report_${document.getElementById('production').value.replace(/[^a-z0-9]/gi, '_') || 'Export'}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            document.querySelector('.action-bar').style.display = 'none';
+            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            document.querySelector('.action-bar').style.display = 'flex';
+
+            const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
+            
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Sound Report',
+                    text: 'Attached Sound Report PDF'
+                });
+            } else {
+                alert("Sharing this file is not supported by your device.");
+            }
         } catch (err) {
             console.error(err);
+            alert("Failed to share PDF.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     }
 
