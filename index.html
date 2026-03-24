@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --primary: #512DA8;
@@ -324,9 +325,25 @@
             </div>
         </div>
 
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="location" placeholder="e.g. Sydney, NSW">
+            </div>
+            <div class="form-group">
+                <label>Dates</label>
+                <div id="datesList">
+                    <div class="channel-row">
+                        <input type="text" placeholder="Date 1" class="date-input">
+                    </div>
+                </div>
+                <button type="button" class="add-btn" onclick="addDate()">+ Add Date</button>
+            </div>
+        </div>
+
         <div class="form-group">
-            <label>Dates</label>
-            <input type="text" id="dates" placeholder="e.g. 23/03/2026">
+            <label>General Notes</label>
+            <textarea id="generalNotesTop" style="height: 100px;" placeholder="Overall metadata, mood, or specific crew notes..."></textarea>
         </div>
 
         <div class="grid-3">
@@ -401,17 +418,13 @@ T2 - Sound Only
                 Share Report
             </button>
             <div class="share-menu" id="shareMenu">
-                <div class="share-option" onclick="shareViaNative()">
+                <div class="share-option" onclick="sharePDF()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    System Share (PDF/AirDrop)
+                    Share PDF
                 </div>
-                <div class="share-option" onclick="shareViaEmail()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                    Send via Email
-                </div>
-                <div class="share-option" onclick="window.print()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                    Save / Print PDF
+                <div class="share-option" onclick="downloadPDF()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download PDF
                 </div>
             </div>
         </div>
@@ -431,7 +444,9 @@ T2 - Sound Only
 
     <div class="project-title">
         <h1 id="outProduction">Project Title</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Professional Sound Report - Post-Production Copy</p>
+        <p id="outLocation" style="color: var(--text-secondary); font-weight: 600;"></p>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">Professional Sound Report - Post-Production Copy</p>
+        <div id="outGeneralNotes" style="background: var(--background); padding: 15px; border-radius: 12px; margin-bottom: 30px; font-size: 0.9rem; border-left: 4px solid var(--primary); display: none;"></div>
     </div>
 
     <div class="meta-grid">
@@ -481,6 +496,20 @@ T2 - Sound Only
         list.appendChild(row);
     }
 
+    function addDate() {
+        const list = document.getElementById('datesList');
+        const count = list.children.length + 1;
+        const row = document.createElement('div');
+        row.className = 'channel-row';
+        row.innerHTML = `
+            <input type="text" placeholder="Date ${count}" class="date-input">
+            <button class="remove-btn" onclick="this.parentElement.remove()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        `;
+        list.appendChild(row);
+    }
+
     function toggleShareMenu() {
         document.getElementById('shareMenu').classList.toggle('active');
     }
@@ -492,23 +521,52 @@ T2 - Sound Only
         }
     }
 
-    function shareViaNative() {
-        if (navigator.share) {
-            navigator.share({
-                title: `Sound Report - ${document.getElementById('production').value}`,
-                text: `Please find the sound report for ${document.getElementById('production').value} attached.`,
-                url: window.location.href
-            }).catch(console.error);
-        } else {
-            window.print();
-        }
+    async function downloadPDF() {
+        const element = document.getElementById('reportView');
+        const opt = {
+            margin:       0.5,
+            filename:     `Sound_Report_${document.getElementById('production').value || 'Export'}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        
+        // Hide action bar during capture
+        document.querySelector('.action-bar').style.display = 'none';
+        await html2pdf().set(opt).from(element).save();
+        document.querySelector('.action-bar').style.display = 'flex';
     }
 
-    function shareViaEmail() {
-        const prod = document.getElementById('production').value || 'Production';
-        const subject = encodeURIComponent(`Sound Report: ${prod}`);
-        const body = encodeURIComponent(`Hello,\n\nPlease find the internal sound report summary for ${prod} below.\n\n(Note: For the full formatted PDF, please request the official export.)`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    async function sharePDF() {
+        const element = document.getElementById('reportView');
+        const opt = {
+            margin:       0.5,
+            filename:     'report.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        if (!navigator.share) {
+            alert("Your browser doesn't support direct sharing. Use Download instead.");
+            return;
+        }
+
+        document.querySelector('.action-bar').style.display = 'none';
+        const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+        document.querySelector('.action-bar').style.display = 'flex';
+
+        const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
+        
+        try {
+            await navigator.share({
+                files: [file],
+                title: 'Sound Report',
+                text: 'Sharing Sound Report PDF'
+            });
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     // Extraction & Rendering Logic
@@ -576,7 +634,20 @@ T2 - Sound Only
         // Map Meta Data
         document.getElementById('outProduction').innerText = document.getElementById('production').value || 'Production Report';
         document.getElementById('outSubject').innerText = document.getElementById('subject').value || 'N/A';
-        document.getElementById('outDates').innerText = document.getElementById('dates').value || 'N/A';
+        
+        const loc = document.getElementById('location').value;
+        const outLoc = document.getElementById('outLocation');
+        if (loc) { outLoc.innerText = loc; outLoc.style.display = 'block'; } else { outLoc.style.display = 'none'; }
+        
+        const genNotes = document.getElementById('generalNotesTop').value;
+        const outGenNotes = document.getElementById('outGeneralNotes');
+        if (genNotes) { outGenNotes.innerText = genNotes; outGenNotes.style.display = 'block'; } else { outGenNotes.style.display = 'none'; }
+
+        // Collect Dates mapping
+        const dateInputs = document.querySelectorAll('.date-input');
+        let datesArr = [];
+        dateInputs.forEach(inp => { if (inp.value) datesArr.push(inp.value); });
+        document.getElementById('outDates').innerText = datesArr.join(' | ') || 'N/A';
 
         // Parse Notes
         const raw = document.getElementById('rawNotes').value;
@@ -590,9 +661,15 @@ T2 - Sound Only
             line = line.trim();
             if (!line) return;
             
-            let dayMatch = line.match(/^(?:Day\s*\d*(?:\s*-\s*(.*))?|\d+[\/\-]\d+[\/\-]\d+)$/i);
+            let dayMatch = line.match(/^(?:Day\s*(\d+)(?:\s*-\s*(.*))?|\d+[\/\-]\d+[\/\-]\d+)$/i);
             if (dayMatch) {
-                curDay = { title: line, takes: [] };
+                let dayNum = dayMatch[1] ? parseInt(dayMatch[1]) : (days.length + 1);
+                let title = line;
+                // If we have a corresponding dynamic date, append it to the title
+                if (datesArr[dayNum - 1]) {
+                    title = `${line} (${datesArr[dayNum - 1]})`;
+                }
+                curDay = { title: title, takes: [] };
                 days.push(curDay);
                 curTake = null;
                 return;
