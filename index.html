@@ -544,7 +544,7 @@ T2 - Sound Only
                 margin:       [0.4, 0.4],
                 filename:     `Sound_Report_${document.getElementById('production').value.replace(/[^a-z0-9]/gi, '_') || 'Export'}.pdf`,
                 image:        { type: 'jpeg', quality: 0.95 },
-                html2canvas:  { scale: 1.5, useCORS: true, logging: false }, // Lower scale = much faster
+                html2canvas:  { scale: 1.5, useCORS: true, logging: false, y: 0 },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
             
@@ -586,7 +586,7 @@ T2 - Sound Only
                 margin:       [0.4, 0.4],
                 filename:     `Sound_Report.pdf`,
                 image:        { type: 'jpeg', quality: 0.95 },
-                html2canvas:  { scale: 1.5, useCORS: true }, 
+                html2canvas:  { scale: 1.5, useCORS: true, y: 0 },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
