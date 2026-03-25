@@ -536,20 +536,38 @@ T2 - Sound Only
             btn.disabled = true;
 
             const element = document.getElementById('reportView');
-            // Hide action bar for capture
             const actionBar = document.querySelector('.action-bar');
-            actionBar.style.visibility = 'hidden';
+            actionBar.style.display = 'none';
+
+            // Clone element to ensure it's at the top of the body for clean capture
+            const clone = element.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.top = '0';
+            clone.style.left = '0';
+            clone.style.zIndex = '-1000';
+            clone.style.width = '1000px';
+            clone.style.background = 'white';
+            clone.style.display = 'block';
+            document.body.appendChild(clone);
 
             const opt = {
-                margin:       [0.4, 0.4],
+                margin:       [0.3, 0.3],
                 filename:     `Sound_Report_${document.getElementById('production').value.replace(/[^a-z0-9]/gi, '_') || 'Export'}.pdf`,
-                image:        { type: 'jpeg', quality: 0.95 },
-                html2canvas:  { scale: 1.5, useCORS: true, logging: false, y: 0 },
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false,
+                    scrollY: 0,
+                    y: 0
+                },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
             
-            await html2pdf().set(opt).from(element).save();
-            actionBar.style.visibility = 'visible';
+            await html2pdf().set(opt).from(clone).save();
+            
+            document.body.removeChild(clone);
+            actionBar.style.display = 'flex';
         } catch (err) {
             console.error(err);
             alert("Download failed. Opening standard print menu instead.");
@@ -580,22 +598,38 @@ T2 - Sound Only
 
             const element = document.getElementById('reportView');
             const actionBar = document.querySelector('.action-bar');
-            actionBar.style.visibility = 'hidden';
+            actionBar.style.display = 'none';
+
+            const clone = element.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.top = '0';
+            clone.style.left = '0';
+            clone.style.zIndex = '-1000';
+            clone.style.width = '1000px';
+            clone.style.background = 'white';
+            clone.style.display = 'block';
+            document.body.appendChild(clone);
 
             const opt = {
-                margin:       [0.4, 0.4],
+                margin:       [0.3, 0.3],
                 filename:     `Sound_Report.pdf`,
-                image:        { type: 'jpeg', quality: 0.95 },
-                html2canvas:  { scale: 1.5, useCORS: true, y: 0 },
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    scrollY: 0,
+                    y: 0
+                },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
-            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-            actionBar.style.visibility = 'visible';
+            const pdfBlob = await html2pdf().set(opt).from(clone).output('blob');
+            
+            document.body.removeChild(clone);
+            actionBar.style.display = 'flex';
 
             const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
             
-            // Re-check shareability with the actual file object
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
@@ -603,7 +637,6 @@ T2 - Sound Only
                     text: 'Attached Sound Report PDF'
                 });
             } else {
-                 // Fallback for Safari/Mobile if file share is blocked
                 alert("File sharing blocked by browser. Tip: Use 'Download PDF' and share from your Files app, or use Print.");
             }
         } catch (err) {
